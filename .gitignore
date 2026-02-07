@@ -4,6 +4,7 @@ __pycache__
 migrations/
 alembic.ini
 dump.rdb
+
 # Python相关
 __pycache__/
 *.py[cod]
