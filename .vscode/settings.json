@@ -1,0 +1,6 @@
+{
+    "terminal.integrated.fontFamily": "JetBrainsMono Nerd Font", // 注意名称带Nerd Font
+    "terminal.integrated.fontWeight": "bold",
+    "terminal.integrated.fontSize": 13, // 可选：字体大小
+    "terminal.integrated.allowChords": true,
+}
