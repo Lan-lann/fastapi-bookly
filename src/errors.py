@@ -48,7 +48,11 @@ class UserNotFound(BooklyException):
     pass
 
 class TagAlreadyExists(BooklyException):
-    "Tag already exists"
+    """Tag already exists"""
+    pass
+
+class AccountNotVerified(BooklyException):
+    """Account not yet verified"""
     pass
 
 def create_exception_handler(status_code: int, initial_detail: Any) -> Callable[[Request, Exception], JSONResponse]:
@@ -189,6 +193,18 @@ def register_all_errors(app: FastAPI):
         ),
     )
 
+    app.add_exception_handler(
+            AccountNotVerified,
+            create_exception_handler(
+            status_code=status.HTTP_403_FORBIDDEN,
+            initial_detail={
+                "message": "Account not verified",
+                "error_code": "account_not_verified",
+                "resolution": "Please check your email for verification details"
+            },
+        ),
+    )
+
     @app.exception_handler(500)
     async def internal_server_error(request, exc):
         return JSONResponse(
@@ -198,5 +214,6 @@ def register_all_errors(app: FastAPI):
                 },
                 status_code=status.HTTP_500_INTERNAL_SERVER_ERROR
             )
+    
 
 
