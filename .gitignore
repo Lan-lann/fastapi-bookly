@@ -21,3 +21,6 @@ build/
 .idea/     # PyCharm配置
 .vscode/   # VSCode配置
 *.log
+
+.hypothesis/
+.pytest_cache/
