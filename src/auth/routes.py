@@ -1,4 +1,4 @@
-from fastapi import APIRouter, Depends, status
+from fastapi import APIRouter, Depends, status, BackgroundTasks
 from .schemas import (
     UserCreateModel,
     UserModel,
@@ -30,9 +30,10 @@ from .dependencies import (
 )
 from src.db.redis import add_jti_to_blocklist
 from src.errors import UserAlreadyExists, UserNotFound, InvalidCredentials, InvalidToken
-from src.mail import mail, create_message
+
 from src.config import Config
 from src.db.main import get_session
+from src.celery_tasks import send_email
 
 auth_router = APIRouter()
 user_service = UserService()
@@ -42,21 +43,21 @@ REFRESH_TOKEN_EXPIRY = 2
 
 
 @auth_router.post("/send_mail")
-async def send_email(emails: EmailModel):
+async def send_email_to_users(emails: EmailModel):
     emails = emails.addresses
 
     html = "<h1>Welcome to the app</h1>"
 
-    message = create_message(recipients=emails, subject="Welcome", body=html)
+    subject = "Welcome to our app"
 
-    await mail.send_message(message)
+    send_email.delay(emails, subject, html)
 
     return JSONResponse(content={"message": "Email sent successfully"})
 
 
 @auth_router.post("/signup", status_code=status.HTTP_201_CREATED)
 async def create_user_account(
-    user_data: UserCreateModel, session: AsyncSession = Depends(get_session)
+    user_data: UserCreateModel, bg_tasks: BackgroundTasks, session: AsyncSession = Depends(get_session)
 ):
     email = user_data.email
 
@@ -75,9 +76,11 @@ async def create_user_account(
     <p> Please click this <a href={link}>link</a> to verify your email </p>
     """
 
-    message = create_message(recipients=[email], subject="Welcome", body=html_message)
+    emails = [email]
 
-    await mail.send_message(message)
+    subject = "Verify your email"
+
+    send_email.delay(emails, subject, html_message)
 
     return {
         "message": "Account Created! Check email to verify your account",
@@ -202,9 +205,11 @@ async def password_reset_request(email_data: PasswordResetRequestModel):
     <p> Please click this <a href={link}>link</a> to Reset your Password </p>
     """
 
-    message = create_message(recipients=[email], subject="Welcome", body=html_message)
+    emails = [email]
 
-    await mail.send_message(message)
+    subject = "Reset Your Password"
+    
+    send_email.delay(emails, subject, html_message)
 
     return JSONResponse(
         content={
